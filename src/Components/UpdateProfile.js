@@ -3,8 +3,7 @@ import { useRef, useState } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
-const SignUp = () => {
-
+const UpdateProfile = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -14,23 +13,45 @@ const SignUp = () => {
     const emailRef = useRef();
     const passwordRef = useRef();
     const passwordConfirmRef = useRef();
-    const { signup } = useAuth();
+    const { signup, currentUser, updateUserEmail, updateUserPassword } = useAuth();
 
-    async function handleSubmit(e) {
+    function handleProfileUpdate(e) {
         e.preventDefault()
 
         const email = emailRef.current.value;
         const password = passwordRef.current.value;
-        const password_confirm = passwordConfirmRef.current.value;
+        
+        const promises = [];
 
-        if (password !== password_confirm || password === '' || password_confirm === '') {
-            return setError("Passwords do not match")
+        setLoading(false)
+        setError('')
+
+        if (email !== currentUser.email) {
+            promises.push(updateUserEmail(email))
         }
+
+        if (password) {
+            promises.push(updateUserPassword(email, password))
+        }
+
+        Promise.all(promises).then(
+            () => {
+                navigate('/')
+            }
+        ).catch(
+            () => {
+                setError('Failed to update profile')
+            }
+        ).finally(
+            () => {
+                setLoading(false)
+            }
+        )
         
         try {
             setError("")
             setLoading(true)
-            await signup(email, password)
+            signup(email, password)
             navigate('/login')
         }catch {
             setError("Account creation failed!!!")
@@ -42,33 +63,33 @@ const SignUp = () => {
     return (      
         <div className="d-flex justify-content-center align-items-center min-vh-100">
             <Card>
-                <Card.Header className="fs-2 fw-bolder text-center mb-1">Sign up</Card.Header>
+                <Card.Header className="fs-2 fw-bolder text-center mb-1">Update Profile</Card.Header>
                 {error && <Alert variant="danger" className='text-center'>{error}</Alert>}
                 <Card.Body>
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleProfileUpdate}>
                         <Form.Group id="email">
                             <Form.Label className='fs-5'>Email</Form.Label>
-                            <Form.Control type='email' ref={emailRef} required></Form.Control>
+                            <Form.Control type='email' ref={emailRef} ></Form.Control>
                         </Form.Group>
                         <Form.Group id="password">
                             <Form.Label className='fs-5'>Password</Form.Label>
-                            <Form.Control type='password' ref={passwordRef} required></Form.Control>
+                            <Form.Control type='password' ref={passwordRef} placeholder="Leave blank to keep the same"></Form.Control>
                         </Form.Group>
                         <Form.Group id="password_confirm">
                             <Form.Label className='fs-5'>Confirm Password</Form.Label>
-                            <Form.Control type='password' ref={passwordConfirmRef} required></Form.Control>
+                            <Form.Control type='password' ref={passwordConfirmRef} placeholder="Leave blank to keep the same"></Form.Control>
                         </Form.Group>
 
                         <Button type='submit' className='mt-4 w-100' disabled={loading}>
-                            Sign up
+                            Update Profile
                         </Button>
                     </Form>
                 </Card.Body>
 
-                <p className='text-center mt-3'>Already have an account? <Link to='/login'>Login</Link></p>
+                <Link className='text-center mb-2' to={'/'}>Cancel</Link>
             </Card>
         </div>
-     );
-}
+    )
+};
  
-export default SignUp; 
+export default UpdateProfile;
